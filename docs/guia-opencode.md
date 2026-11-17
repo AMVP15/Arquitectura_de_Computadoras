@@ -93,7 +93,8 @@ indica que continúe (cambia a modo de ejecución).
   "instructions": [
     "docs/guia-git.md",
     "docs/guia-opencode.md",
-    "docs/guia-wsl.md"
+    "docs/guia-wsl.md",
+    "docs/guia-fpga-de10.md"
   ]
 }
 ```
