@@ -9,6 +9,7 @@ adaptan los datapaths a la placa **Terasic DE10-Standard** (Cyclone V SoC
 |---|---|
 | `src/divisor.vhd` | 50 MHz → 1 Hz (o lo que se pida) como **pulso de habilitación**, no como reloj derivado |
 | `src/antirrebote.vhd` | estabiliza una entrada durante `TIEMPO_MS` milisegundos |
+| `src/pulsador.vhd` | nivel de un botón → **pulso de un ciclo** por pulsación (arranca las FSM con un flanco) |
 | `src/hex7seg.vhd` | 4 bits → display de 7 segmentos, **activo a nivel bajo** (ánodo común) |
 
 Los pines **no** se declaran en VHDL: se asignan en el `.qsf` de cada proyecto
