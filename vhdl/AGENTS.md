@@ -1,7 +1,8 @@
 # AGENTS.md — Código VHDL
 
 Convención para el código VHDL de las 4 unidades:
-`datapath-1`, `datapath-2`, `datapath-3`, `mapeo-memoria`.
+`datapath-1`, `datapath-2`, `datapath-3`, `mapeo-memoria`. Además,
+`vhdl/fpga-de10/` guarda la base común de la placa DE10-Standard.
 
 ## Estructura de cada unidad
 
@@ -9,9 +10,17 @@ Convención para el código VHDL de las 4 unidades:
 vhdl/<unidad>/
   src/        una entidad por fichero (el diseño)
   tb/         un testbench por módulo
+  fpga/       envoltorio de placa + proyecto Quartus (.qpf/.qsf/.sdc)
   salidas/    .vcd generados (NO se versionan, ya ignorados)
   .ghdl/      workdir temporal de GHDL (NO se versiona)
 ```
+
+`fpga/` es opcional: solo existe cuando la unidad se porta a la DE10-Standard.
+El diseño y los testbenches de `src/` y `tb/` **no** dependen de la placa.
+
+`vhdl/fpga-de10/` no es una unidad: es la base común de la placa (`divisor`,
+`antirrebote`, `pulsador`, `hex7seg` + su tabla de pines). `scripts/vhdl-analizar`
+y `scripts/vhdl-sim` la compilan antes que `src/` y `fpga/` de la unidad.
 
 ## Simular: usa siempre los scripts del repo
 
@@ -48,12 +57,17 @@ herramienta faltante → `bash scripts/instalar.sh`.
 - Antes de dar por terminado un módulo, debe pasar:
   `scripts/vhdl-sim <unidad> tb_<modulo>`.
 
-## Nota sobre síntesis
+## Simulación y placa
 
-El GHDL del equipo es backend **mcode**: **solo simulación**. No se trabaja
-síntesis en este proyecto (no hay yosys ni flujo de síntesis). Si un usuario
-pregunta por sintetizar, aclara que el flujo del curso es simulación con
-GHDL + visualización con GTKWave.
+El GHDL del equipo es backend **mcode**: **solo simulación**. Para sintetizar y
+programar la **DE10-Standard** (Cyclone V `5CSXFC6D6F31C6`) se usa **Quartus
+Prime Lite por interfaz gráfica**; guía completa en `docs/guia-fpga-de10.md`.
+No se trabaja el flujo libre (yosys/nextpnr): no lo instales ni lo propongas.
+
+Un módulo de placa nuevo va en `vhdl/fpga-de10/src/` si es reutilizable
+(`divisor`, `pulsador`, `hex7seg`…) y en `vhdl/<unidad>/fpga/` si es el
+envoltorio de esa unidad. Todo lo que se sintetiza debe tener antes su
+testbench y pasar `scripts/vhdl-sim`.
 
 ## Git: una rama por cada feature
 
@@ -73,5 +87,7 @@ del flujo en `docs/guia-git.md`.
 
 Nunca hagas `commit` de: `*.cf`, `*.o`, `*.ali`, `work-obj*`, `*.vcd`,
 `*.ghw`, `.ghdl/`, `salidas/`. Todo eso ya está en `.gitignore`.
+De Quartus, nunca se versionan `db/`, `incremental_db/`, `output_files/`,
+`*.sof`, `*.rbf`, `*.qws` ni los informes (`*.rpt`, `*.summary`).
 Las **capturas** que van en los reportes son PNG exportados de GTKWave, y se
 guardan en `reportes/<unidad>/figuras/`.

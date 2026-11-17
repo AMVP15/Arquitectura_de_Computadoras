@@ -1,7 +1,8 @@
 # AGENTS.md — Instrucciones del proyecto
 
 Repositorio de **Arquitectura de Computadoras**: 4 reportes en formato Springer
-(LaTeX/llncs) + código VHDL simulado con GHDL. Equipo de 5 integrantes.
+(LaTeX/llncs) + código VHDL simulado con GHDL (+ envoltorio de placa para la
+FPGA DE10-Standard en `vhdl/fpga-de10/`). Equipo de 5 integrantes.
 
 ## Regla de oro: deriva SIEMPRE a los scripts y documentos del repo
 
@@ -21,6 +22,8 @@ los scripts existentes**. No recomiendes comandos `latexmk`, `ghdl` o
 | "Añade/modifica este módulo, sección o guía" | **Abre primero la rama por feature** (ver sección **Git**) aunque no te lo pidan |
 | "Estoy en Windows/WSL" | `docs/guia-wsl.md` |
 | "¿Cómo uso OpenCode en este repo?" | `docs/guia-opencode.md` |
+| "¿Cómo paso esto a la placa / FPGA?" | `docs/guia-fpga-de10.md` (Quartus Prime Lite por GUI) |
+| "¿Cómo compilo el proyecto de Quartus?" | doble clic en `vhdl/<unidad>/fpga/top_placa.qpf` + `Ctrl+L` (ver guía) |
 
 Si el usuario **no tiene** `ghdl`, `gtkwave`, `latexmk` o `kpsewhich llncs.cls`,
 o un error indica herramienta faltante → recomienda
@@ -41,7 +44,10 @@ reportes/       los 4 reportes (LaTeX llncs) + AGENTS.md con la plantilla
   comun/               plantilla_base.tex (esqueleto de cada reporte)
 vhdl/           código VHDL: una carpeta por unidad + AGENTS.md de convención
   <unidad>/src  <unidad>/tb  <unidad>/salidas
-docs/           guías: guia-git.md, guia-opencode.md, guia-wsl.md, formato/
+  <unidad>/fpga/       envoltorio de placa + proyecto Quartus (opcional)
+  fpga-de10/           base común de la placa (divisor, antirrebote, hex7seg…)
+docs/           guías: guia-git.md, guia-opencode.md, guia-wsl.md,
+                guia-fpga-de10.md, formato/
 opencode.json   configuración de OpenCode (carga docs/ como instrucciones)
 ```
 
@@ -64,6 +70,12 @@ bash scripts/instalar.sh               # instala dependencias
 bash scripts/instalar.sh --check       # solo verifica
 ```
 
+**Placa DE10-Standard**: no hay comando oficial. El flujo es **Quartus Prime
+Lite por GUI** (doble clic en `vhdl/<unidad>/fpga/top_placa.qpf`,
+`Process → Start Compilation` y `Tools → Programmer`). Detalle en
+`docs/guia-fpga-de10.md`; no propongas `quartus_sh`/`quartus_pgm` como flujo
+del equipo salvo para depurar un error concreto.
+
 ## Convención VHDL
 
 - **Estándar: VHDL-2008** (`--std=08`). Debe compilar en **GHDL 4.1 (Ubuntu/WSL) y
@@ -72,10 +84,11 @@ bash scripts/instalar.sh --check       # solo verifica
   constantes. Comentarios en español.
 - **Todo módulo nuevo necesita testbench** en `tb/` y debe pasar
   `scripts/vhdl-sim`.
-- **GHDL con backend mcode = solo simulación** (no síntesis). No prometas
-  síntesis ni instales yosys.
-- Nunca subas artefactos (`.cf`, `.o`, `.vcd`, `work-obj*`): ya los cubre
-  `.gitignore`.
+- **GHDL con backend mcode = solo simulación**. La síntesis y la programación
+  de la FPGA se hacen con **Quartus Prime Lite por GUI** (ver
+  `docs/guia-fpga-de10.md`); no instales ni propongas yosys/nextpnr.
+- Nunca subas artefactos (`.cf`, `.o`, `.vcd`, `work-obj*`, `db/`,
+  `output_files/`, `*.sof`): ya los cubre `.gitignore`.
 
 ## Convención LaTeX / reportes
 

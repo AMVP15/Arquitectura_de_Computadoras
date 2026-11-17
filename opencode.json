@@ -3,7 +3,8 @@
   "instructions": [
     "docs/guia-git.md",
     "docs/guia-opencode.md",
-    "docs/guia-wsl.md"
+    "docs/guia-wsl.md",
+    "docs/guia-fpga-de10.md"
   ],
   "watcher": {
     "ignore": [
@@ -15,6 +16,10 @@
       "**/.ghdl/**",
       "*.vcd",
       "*.cf",
+      "**/db/**",
+      "**/incremental_db/**",
+      "**/output_files/**",
+      "*.sof",
       "*.aux",
       "*.log",
       "*.out",
