@@ -182,7 +182,8 @@ fi
    scripts/vhdl-sim <unidad> tb_top_placa
    ```
 6. **Compila** en Quartus y programa.
-7. **Documenta**: `fpga/README.md` con controles, qué se ve y un guion de demo.
+7. **Documenta**: `fpga/README.md` con los controles, cómo se usa la placa, qué
+   se ve y un guion de demo (modelo: el de `mapeo-memoria`).
 8. **Commit y PR** a `dev`:
    `vhdl(<unidad>): añadir envoltorio y proyecto Quartus para la DE10-Standard`.
 
@@ -212,7 +213,49 @@ informes (`*.rpt`, `*.summary`). Ya están en `.gitignore`; si aparecen en
 
 ---
 
-## 8. Por qué no usamos el flujo libre
+## 8. Cómo se usa la placa una vez programada
+
+Programar no es usar: al terminar la carga el diseño ya está corriendo, y a
+partir de ahí la placa solo "habla" por LEDs y displays. El patrón es el mismo
+en todas las unidades:
+
+```
+  ┌────────────────┐   ┌────────────────┐   ┌────────────────┐   ┌────────────────┐
+  │ 1. Pones las   │   │ 2. Pulsas el   │   │ 3. Lees el     │   │ 4. Repites o   │
+  │    entradas    │──►│    botón de    │──►│    resultado   │──►│    cambias de  │
+  │    (SW)        │   │    disparo     │   │    (LED/HEX)   │   │    modo        │
+  └────────────────┘   └────────────────┘   └────────────────┘   └────────────────┘
+```
+
+### 8.1 Reglas que valen para cualquier unidad
+
+| Regla | Por qué |
+|---|---|
+| Las entradas se capturan **al pulsar**, no al mover el switch | el diseño muestrea en el flanco del botón; mover `SW` no dispara nada |
+| Un botón = **un flanco = una operación** | los pulsadores pasan por `pulsador`; mantener pulsado no repite |
+| Los resultados que importan suelen estar **latcheados** | el LED/dato sigue visible hasta la siguiente petición |
+| Las señales internas (`ready`, `estado`) duran **ciclos**, no segundos | a 50 MHz son invisibles al ojo; se miran en GTKWave |
+| Los displays son una "consola" hexadecimal | conviene reservar campos fijos: modo, estado, dato |
+| La placa **no muestra la entrada** salvo que se cablee a un display | apunta la dirección o el valor que metes |
+
+### 8.2 Ejemplo completo
+
+En `mapeo-memoria` el guion de 10 pasos, la tabla de direcciones en binario, qué
+debe mostrar cada display y los errores típicos están en
+**`vhdl/mapeo-memoria/fpga/README.md`** (§4 y §5). Ese README es el modelo a
+copiar en cada unidad: controles, qué se ve y guion de demostración.
+
+### 8.3 Checklist para el día de la prueba
+
+- [ ] Llevar el `.sof` ya compilado (`output_files/`, unos 6 MB) además del repo.
+- [ ] Llevar la guía de uso de la unidad (README de su `fpga/`) impresa.
+- [ ] Cable micro-USB al conector **USB-Blaster II**, no al UART.
+- [ ] Encender la placa antes de abrir `Hardware Setup…`.
+- [ ] Tras programar: `KEY3` (reset), primera lectura y comprobar que responde.
+
+---
+
+## 9. Por qué no usamos el flujo libre
 
 Se intentó **GHDL + ghdl-yosys-plugin + nextpnr-mistral + openFPGALoader** para
 Cyclone V y se descartó:

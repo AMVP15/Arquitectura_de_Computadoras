@@ -18,6 +18,12 @@ vhdl/<unidad>/
 `fpga/` es opcional: solo existe cuando la unidad se porta a la DE10-Standard.
 El diseño y los testbenches de `src/` y `tb/` **no** dependen de la placa.
 
+Todo `fpga/` lleva su `README.md` con **cómo se usa la placa**: qué hace cada
+switch y botón, qué significa cada LED y display, el guion de demostración paso
+a paso y los errores de interacción típicos. Se escribe para alguien que se
+pone delante de la placa por primera vez. Modelo:
+`vhdl/mapeo-memoria/fpga/README.md`.
+
 `vhdl/fpga-de10/` no es una unidad: es la base común de la placa (`divisor`,
 `antirrebote`, `pulsador`, `hex7seg` + su tabla de pines). `scripts/vhdl-analizar`
 y `scripts/vhdl-sim` la compilan antes que `src/` y `fpga/` de la unidad.

@@ -24,6 +24,8 @@ los scripts existentes**. No recomiendes comandos `latexmk`, `ghdl` o
 | "¿Cómo uso OpenCode en este repo?" | `docs/guia-opencode.md` |
 | "¿Cómo paso esto a la placa / FPGA?" | `docs/guia-fpga-de10.md` (Quartus Prime Lite por GUI) |
 | "¿Cómo compilo el proyecto de Quartus?" | doble clic en `vhdl/<unidad>/fpga/top_placa.qpf` + `Ctrl+L` (ver guía) |
+| "¿Cómo programo la placa?" | `Tools → Programmer` + `.sof` (guía §4.5) |
+| "¿Cómo uso la placa? ¿Qué hace cada switch, botón o display?" | `vhdl/<unidad>/fpga/README.md` (mapeo-memoria: guía del día de la prueba) y guía §8 |
 
 Si el usuario **no tiene** `ghdl`, `gtkwave`, `latexmk` o `kpsewhich llncs.cls`,
 o un error indica herramienta faltante → recomienda
@@ -75,6 +77,13 @@ Lite por GUI** (doble clic en `vhdl/<unidad>/fpga/top_placa.qpf`,
 `Process → Start Compilation` y `Tools → Programmer`). Detalle en
 `docs/guia-fpga-de10.md`; no propongas `quartus_sh`/`quartus_pgm` como flujo
 del equipo salvo para depurar un error concreto.
+
+Cómo se **usa** la placa ya programada (mapeo-memoria): `SW[9:0]` = dirección
+de byte, `KEY0` = consultar (un flanco = una lectura), `KEY1` = cambiar de
+caché, `KEY2` = invalidar, `KEY3` = reset; `LEDR0` encendido = acierto,
+`HEX5` = caché activa, `HEX4` = estado y `HEX3..0` = dato. `LEDR1..3` duran
+ciclos y no se ven. Guion paso a paso y errores típicos:
+`vhdl/mapeo-memoria/fpga/README.md`.
 
 ## Convención VHDL
 
