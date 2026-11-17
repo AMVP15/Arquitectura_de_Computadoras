@@ -39,6 +39,7 @@ vhdl/fpga-de10/                 base común de la placa (no es una unidad)
   src/pulsador.vhd              pulsación -> pulso de un ciclo
   src/hex7seg.vhd               4 bits -> display, activo a nivel bajo
   README.md                     tabla de pines del manual de Terasic
+  PLANTILLA-README.md           esqueleto del README de uso de cada unidad
 
 vhdl/<unidad>/fpga/             envoltorio y proyecto Quartus de esa unidad
   top_placa.vhd                 conecta el diseño a los periféricos
@@ -161,36 +162,109 @@ fi
 
 ## 6. Replicar el flujo en otra unidad (receta)
 
-1. **Crea la rama**: `git switch dev && git pull`,
-   `git switch -c vhdl/<unidad>/top-placa`.
-2. **Copia la carpeta `fpga/`** de una unidad ya hecha:
-   ```bash
-   cp -r vhdl/mapeo-memoria/fpga vhdl/<unidad>/fpga
-   ```
-3. **Sustituye `top_placa.vhd` y `tb_top_placa.vhd`** por el envoltorio de tu
-   unidad. Lo mínimo es: componentes de tus módulos, mapa de `KEY`/`SW` a las
-   entradas, `LEDR`/`HEX` a las salidas y `hex7seg` para los displays.
-4. **Ajusta el `.qsf`**, en este orden:
-   - `VHDL_FILE`: quita los `../src/...` de la otra unidad y pon los tuyos,
-     más los de `../../fpga-de10/src/` que uses (`pulsador`, `hex7seg`,
-     `divisor`, `antirrebote`). **No añadas los testbenches.**
-   - `TOP_LEVEL_ENTITY`: el nombre de tu entidad (normalmente `top_placa`).
-   - El **bloque de pines no se toca**: es de la placa, no de la unidad.
-     Basta con no declarar puertos que no uses.
-5. **Verifica en simulación** antes de sintetizar:
-   ```bash
-   scripts/vhdl-sim <unidad> tb_top_placa
-   ```
-6. **Compila** en Quartus y programa.
-7. **Documenta**: `fpga/README.md` con los controles, cómo se usa la placa, qué
-   se ve y un guion de demo (modelo: el de `mapeo-memoria`).
-8. **Commit y PR** a `dev`:
-   `vhdl(<unidad>): añadir envoltorio y proyecto Quartus para la DE10-Standard`.
+Tiempo estimado: 1-2 h; de ellas, 5 minutos son de Quartus. El resto es
+escribir el envoltorio y su testbench.
+
+### 6.1 Contrato de puertos (léelo antes de escribir VHDL)
+
+El bloque de pines del `.qsf` asigna **nombres concretos** (`clk`, `key[0]`,
+`sw[3]`, `ledr[0]`, `hex0[6]`…). Si tu entidad no usa esos nombres, Quartus
+ignora esas asignaciones y los periféricos no responden: parece que "no
+funciona la placa" cuando el problema es el nombre de un puerto.
+
+Declara siempre estos siete, con estos nombres y anchos, aunque tu unidad no
+use todos:
+
+| Puerto | Tipo | Ancho | Pines |
+|---|---|---|---|
+| `clk` | in `std_logic` | 1 | `AF14` (CLOCK_50, 50 MHz) |
+| `key` | in `std_logic_vector(3 downto 0)` | 4 | `AJ4 AK4 AA14 AA15` (activos a nivel bajo) |
+| `sw` | in `std_logic_vector(9 downto 0)` | 10 | `AB30 Y27 AB28 AC30 W25 V25 AC28 AD30 AC29 AA30` |
+| `ledr` | out `std_logic_vector(9 downto 0)` | 10 | `AA24 AB23 AC23 AD24 AG25 AF25 AE24 AF24 AB22 AC22` |
+| `hex0` … `hex5` | out `std_logic_vector(6 downto 0)` | 7 cada uno | ver `vhdl/fpga-de10/README.md`, Tabla 3-9 |
+
+Reglas:
+
+- La entidad se llama **`top_placa`** (es el `TOP_LEVEL_ENTITY` del `.qsf`).
+- Un `sw` que no uses no molesta: es una entrada y simplemente no se lee.
+- Un `ledr` o un `hex` que no uses **no se borra del puerto**: se apaga
+  (`ledr(x) <= '0'`, `hex4 <= (others => '1')`). Si prefieres borrar sus líneas
+  del `.qsf`, asumirás el aviso *Ignored assignments*.
+
+### 6.2 Qué copiar (y qué no)
+
+```bash
+git switch dev && git pull
+git switch -c vhdl/<unidad>/top-placa
+mkdir -p vhdl/<unidad>/fpga
+cp vhdl/mapeo-memoria/fpga/{top_placa.qpf,top_placa.qsf,top_placa.sdc,README.md} \
+   vhdl/<unidad>/fpga/
+```
+
+**No** copies la carpeta entera con `cp -r`: arrastrarías `output_files/`,
+`db/`, `incremental_db/` y `c5_pin_model_dump.txt`, que son de la compilación de
+la otra unidad (git los ignora, pero ocupan y confunden).
+
+`top_placa.vhd` y `tb_top_placa.vhd` **se escriben nuevos**: el envoltorio es de
+tu unidad y el testbench debe comprobar *tus* resultados.
+
+### 6.3 Ajustar el `.qsf`
+
+| Asignación | Qué poner |
+|---|---|
+| `VHDL_FILE` | tus `../src/*.vhd` y los `../../fpga-de10/src/*.vhd` que uses. **Nunca testbenches** |
+| `TOP_LEVEL_ENTITY` | `top_placa` (o el nombre que uses, coherente con la entidad) |
+| `SDC_FILE` | el nombre real del `.sdc`; si renombras el proyecto, renómbralo también |
+| Bloque de pines | no se toca si respetas el contrato de §6.1 |
+
+El `.sdc` solo restringe `CLOCK_50` a 20 ns. Es suficiente mientras no haya
+protocolos síncronos en los pines; sin él, TimeQuest analiza como si el reloj
+fuera de 1 GHz.
+
+### 6.4 Qué módulo común usar
+
+| Necesitas… | Usa |
+|---|---|
+| pasos lentos o parpadeo visible | `divisor` (genera un *tick* de habilitación) |
+| leer un switch o un botón externo sin rebotes | `antirrebote` |
+| que un botón dispare una acción una sola vez | `pulsador` |
+| mostrar un valor de 4 bits | `hex7seg` |
+
+**No derives relojes con lógica** (`clk_div <= not clk_div`): usa el tick del
+`divisor` como habilitación. Quartus no puede analizar los tiempos de un reloj
+generado así y el diseño deja de ser fiable.
+
+### 6.5 Verificar antes del PR
+
+```bash
+scripts/vhdl-analizar <unidad>
+scripts/vhdl-sim <unidad> tb_top_placa
+```
+
+Checklist:
+
+- [ ] Los dos comandos anteriores terminan correctamente.
+- [ ] Quartus compila con **0 errores** y genera `output_files/top_placa.sof`.
+- [ ] En `Flow Summary` los pines usados son los del contrato y no hay
+      *Ignored assignments* sobre puertos que sí existen.
+- [ ] `fpga/README.md` sigue la plantilla
+      **`vhdl/fpga-de10/PLANTILLA-README.md`**.
+- [ ] `git status` no muestra `db/`, `output_files/`, `*.sof` ni `*.qws`.
+
+### 6.6 Commit y PR
+
+```bash
+git add vhdl/<unidad>/fpga
+git commit -m "vhdl(<unidad>): añadir envoltorio y proyecto Quartus para la DE10-Standard"
+git push -u origin vhdl/<unidad>/top-placa
+```
+
+Y abre el PR hacia `dev`.
 
 > Un cambio = una rama. No mezcles el `top_placa` de dos unidades ni el
 > envoltorio con cambios del reporte.
 
-### Qué NO se versiona
+### 6.7 Qué NO se versiona
 
 `db/`, `incremental_db/`, `output_files/`, `*.sof`, `*.rbf`, `*.qws` y los
 informes (`*.rpt`, `*.summary`). Ya están en `.gitignore`; si aparecen en

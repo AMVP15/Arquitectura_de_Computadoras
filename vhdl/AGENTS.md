@@ -21,7 +21,8 @@ El diseño y los testbenches de `src/` y `tb/` **no** dependen de la placa.
 Todo `fpga/` lleva su `README.md` con **cómo se usa la placa**: qué hace cada
 switch y botón, qué significa cada LED y display, el guion de demostración paso
 a paso y los errores de interacción típicos. Se escribe para alguien que se
-pone delante de la placa por primera vez. Modelo:
+pone delante de la placa por primera vez. Esqueleto obligatorio:
+`vhdl/fpga-de10/PLANTILLA-README.md`; modelo relleno:
 `vhdl/mapeo-memoria/fpga/README.md`.
 
 `vhdl/fpga-de10/` no es una unidad: es la base común de la placa (`divisor`,
