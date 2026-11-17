@@ -8,7 +8,8 @@
 #   scripts/vhdl-sim <unidad> <entidad_testbench>
 #   ej: scripts/vhdl-sim datapath-1 tb_alu
 #
-# Pasos: analiza src/ + tb/ -> elabora -> ejecuta -> salidas/<tb>.vcd
+# Pasos: analiza fpga-de10/src + <unidad>/fpga + src/ + tb/ -> elabora
+#        -> ejecuta -> salidas/<tb>.vcd
 # ============================================================
 set -euo pipefail
 
@@ -16,7 +17,7 @@ RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [[ $# -lt 2 ]]; then
     echo "Uso: vhdl-sim <unidad> <entidad_testbench>"
-    echo "  unidades: datapath-1 datapath-2 datapath-3 mapeo-memoria"
+    echo "  unidades: datapath-1 datapath-2 datapath-3 mapeo-memoria fpga-de10"
     echo "  ejemplo:  vhdl-sim datapath-1 tb_alu"
     exit 1
 fi
@@ -41,16 +42,23 @@ mkdir -p "$WORK" "$SALIDAS"
 
 # 1) Analizar fuentes y testbenches
 echo "=== [$UNIDAD] Análisis (VHDL-2008) ==="
-mapfile -t FUENTES < <(find "$DIR/src" -name '*.vhd' -o -name '*.vhdl' 2>/dev/null | sort)
-mapfile -t TESTBENCHES < <(find "$DIR/tb" -name '*.vhd' -o -name '*.vhdl' 2>/dev/null | sort)
+mapfile -t FUENTES < <(find "$DIR/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+mapfile -t TESTBENCHES < <(find "$DIR/tb" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
 
-if [[ ${#FUENTES[@]} -eq 0 && ${#TESTBENCHES[@]} -eq 0 ]]; then
+# Módulos comunes de la placa y envoltorios de la unidad (si existen)
+COMPARTIDAS=()
+if [[ "$UNIDAD" != "fpga-de10" && -d "$RAIZ/vhdl/fpga-de10/src" ]]; then
+    mapfile -t COMPARTIDAS < <(find "$RAIZ/vhdl/fpga-de10/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+fi
+mapfile -t ENVOLTORIOS < <(find "$DIR/fpga" -maxdepth 1 \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+
+if [[ ${#COMPARTIDAS[@]} -eq 0 && ${#ENVOLTORIOS[@]} -eq 0 && ${#FUENTES[@]} -eq 0 && ${#TESTBENCHES[@]} -eq 0 ]]; then
     echo "Error: no hay ficheros .vhd en $DIR/src ni $DIR/tb"
     exit 1
 fi
 
 cd "$WORK"
-for f in "${FUENTES[@]}" "${TESTBENCHES[@]}"; do
+for f in "${COMPARTIDAS[@]}" "${ENVOLTORIOS[@]}" "${FUENTES[@]}" "${TESTBENCHES[@]}"; do
     [[ -z "$f" ]] && continue
     echo "  - ${f#"$RAIZ"/}"
     ghdl -a --std=08 --workdir="$WORK" "$f"

@@ -8,7 +8,14 @@
 #   ej: scripts/vhdl-analizar datapath-1
 #
 # <unidad> es una de: datapath-1 | datapath-2 | datapath-3 | mapeo-memoria
+#                     | fpga-de10
 # Analiza vhdl/<unidad>/src/*.vhd con GHDL en modo VHDL-2008.
+#
+# Orden de análisis (importa para las dependencias):
+#   1. vhdl/fpga-de10/src   módulos comunes de la placa (divisor, hex7seg...)
+#   2. vhdl/<unidad>/fpga   envoltorios de placa (top_placa), si existen
+#   3. vhdl/<unidad>/src    el diseño
+#   4. vhdl/<unidad>/tb     los testbenches
 # ============================================================
 set -euo pipefail
 
@@ -16,7 +23,7 @@ RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [[ $# -lt 1 ]]; then
     echo "Uso: vhdl-analizar <unidad>"
-    echo "  unidades: datapath-1 datapath-2 datapath-3 mapeo-memoria"
+    echo "  unidades: datapath-1 datapath-2 datapath-3 mapeo-memoria fpga-de10"
     exit 1
 fi
 
@@ -34,10 +41,21 @@ if ! command -v ghdl >/dev/null 2>&1; then
 fi
 
 # Recoger fuentes: src/ primero (dependencias), luego tb/
-mapfile -t FUENTES < <(find "$DIR/src" -name '*.vhd' -o -name '*.vhdl' 2>/dev/null | sort)
-mapfile -t TESTBENCHES < <(find "$DIR/tb" -name '*.vhd' -o -name '*.vhdl' 2>/dev/null | sort)
+mapfile -t FUENTES < <(find "$DIR/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+mapfile -t TESTBENCHES < <(find "$DIR/tb" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
 
-if [[ ${#FUENTES[@]} -eq 0 && ${#TESTBENCHES[@]} -eq 0 ]]; then
+# Módulos comunes de la placa DE10-Standard: se analizan antes que el diseño
+# para que `divisor`, `hex7seg`... existan en la biblioteca de trabajo.
+COMPARTIDAS=()
+if [[ "$UNIDAD" != "fpga-de10" && -d "$RAIZ/vhdl/fpga-de10/src" ]]; then
+    mapfile -t COMPARTIDAS < <(find "$RAIZ/vhdl/fpga-de10/src" \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+fi
+
+# Envoltorios de placa de la unidad (no forman parte de src/ para no romper
+# el flujo de simulación del diseño original).
+mapfile -t ENVOLTORIOS < <(find "$DIR/fpga" -maxdepth 1 \( -name '*.vhd' -o -name '*.vhdl' \) 2>/dev/null | sort)
+
+if [[ ${#COMPARTIDAS[@]} -eq 0 && ${#ENVOLTORIOS[@]} -eq 0 && ${#FUENTES[@]} -eq 0 && ${#TESTBENCHES[@]} -eq 0 ]]; then
     echo "Error: no hay ficheros .vhd en $DIR/src ni $DIR/tb"
     exit 1
 fi
@@ -49,7 +67,7 @@ mkdir -p "$WORK"
 echo "=== Analizando unidad: $UNIDAD (VHDL-2008) ==="
 cd "$WORK"
 
-for f in "${FUENTES[@]}" "${TESTBENCHES[@]}"; do
+for f in "${COMPARTIDAS[@]}" "${ENVOLTORIOS[@]}" "${FUENTES[@]}" "${TESTBENCHES[@]}"; do
     [[ -z "$f" ]] && continue
     echo "  - ${f#"$RAIZ"/}"
     ghdl -a --std=08 --workdir="$WORK" "$f"
