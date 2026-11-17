@@ -41,6 +41,49 @@ salidas/
 sim/salidas/
 
 # ============================================================
+# Artefactos de Quartus Prime (síntesis para la DE10-Standard)
+# El proyecto (.qpf/.qsf) y los .vhd SÍ se versionan.
+# ============================================================
+db/
+incremental_db/
+output_files/
+greybox_tmp/
+.*_qsys/
+qsys_edit/
+hps_isw_handoff/
+*.qws
+*.sof
+*.pof
+*.rbf
+*.jic
+*.smsg
+*.rpt
+*.summary
+*.pin
+*.flow.rpt
+*.map.rpt
+*.fit.rpt
+*.asm.rpt
+*.sta.rpt
+*.eda.rpt
+*.drc.rpt
+*.pow.rpt
+*.cdb
+*.hdb
+*.rdb
+*.jdi
+*.sld
+*.vqm
+*.vo
+*.vho
+*.sdo
+*.fsy
+*.done
+*.qarlog
+quartus.ini
+c5_pin_model_dump.txt
+
+# ============================================================
 # Editores y sistema
 # ============================================================
 *.swp
