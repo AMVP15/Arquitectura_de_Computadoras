@@ -81,6 +81,28 @@ en mapeo directo provoca un conflicto, en asociativa por conjuntos acierta.**
 > Si el Programmer no ve el cable, falta la regla udev del USB-Blaster:
 > ver `docs/guia-fpga-de10.md`.
 
+## Recursos y tiempos (Quartus 25.1 Lite, `5CSXFC6D6F31C6`)
+
+Compilación de referencia del 17-nov-2026, sin errores:
+
+| Métrica | Valor |
+|---|---|
+| ALMs | 822 / 41 910 (2 %) |
+| Registros | 989 |
+| Pines | 67 / 499 (13 %) |
+| Bloques de memoria | 0 / 5 662 720 bits (0 %) |
+| DSP | 0 / 112 |
+| Fmax (Slow 1100 mV 85 °C, setup) | ≈ 62 MHz (slack **+3.987 ns** con reloj de 20 ns) |
+
+La memoria no consume bloques M10K porque Quartus no infiere RAM con lectura
+asíncrona (`Info (276014): Found 4 instances of uninferred RAM logic`): las
+tablas se implementan en registros y lógica, y como `wr_en` está atado a `'0'`
+la memoria principal queda como ROM con el patrón de fábrica. De ahí los 989
+registros en lugar de los ~8 000 que saldrían si se infirieran RAM.
+
+El `.sdc` es imprescindible: sin él TimeQuest no conoce el periodo y analiza
+como si el reloj fuera de 1 GHz, con *slack* negativo artificial.
+
 ## Simular el envoltorio
 
 ```bash
