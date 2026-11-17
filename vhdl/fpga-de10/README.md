@@ -15,10 +15,14 @@ adaptan los datapaths a la placa **Terasic DE10-Standard** (Cyclone V SoC
 Los pines **no** se declaran en VHDL: se asignan en el `.qsf` de cada proyecto
 Quartus. La tabla de abajo es la referencia que usa ese `.qsf`.
 
+El README de uso de cada unidad (`vhdl/<unidad>/fpga/README.md`) debe seguir el
+esqueleto **`PLANTILLA-README.md`** de este directorio. Un modelo ya relleno es
+`vhdl/mapeo-memoria/fpga/README.md`.
+
 ## Simular
 
 ```bash
-scripts/vhdl-sim fpga-de10 tb_divisor        # o tb_antirrebote / tb_hex7seg
+scripts/vhdl-sim fpga-de10 tb_divisor        # o tb_antirrebote / tb_hex7seg / tb_pulsador
 ```
 
 `vhdl-analizar` y `vhdl-sim` analizan `vhdl/fpga-de10/src` **antes** que el
